@@ -1,13 +1,17 @@
 #include <cstdlib>
 #include <iostream>
 
+#define GLFW_INCLUDE_NONE
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <glm/vec3.hpp>
 
 namespace {
 
 constexpr int kWindowWidth = 1280;
 constexpr int kWindowHeight = 720;
 constexpr const char* kWindowTitle = "City Builder";
+constexpr glm::vec3 kClearColor{0.08F, 0.12F, 0.18F};
 
 void glfwErrorCallback(const int error, const char* description)
 {
@@ -60,6 +64,19 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
+
+    const int openGlVersion = gladLoadGL(glfwGetProcAddress);
+    if (openGlVersion == 0) {
+        std::cerr << "Unable to load OpenGL functions with GLAD.\n";
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return EXIT_FAILURE;
+    }
+
+    std::cout << "Loaded OpenGL "
+              << GLAD_VERSION_MAJOR(openGlVersion) << '.'
+              << GLAD_VERSION_MINOR(openGlVersion) << '\n';
+
     glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
@@ -71,7 +88,7 @@ int main()
     while (glfwWindowShouldClose(window) == GLFW_FALSE) {
         processInput(window);
 
-        glClearColor(0.08F, 0.12F, 0.18F, 1.0F);
+        glClearColor(kClearColor.r, kClearColor.g, kClearColor.b, 1.0F);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glfwSwapBuffers(window);

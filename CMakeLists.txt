@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 project(CityBuilder
     VERSION 0.1.0
     DESCRIPTION "A 3D city builder built with C++ and OpenGL"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -23,7 +23,18 @@ FetchContent_Declare(
     GIT_TAG 3.4
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(glfw)
+
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.3
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glfw glm)
+
+add_library(glad STATIC vendor/glad/src/gl.c)
+target_include_directories(glad PUBLIC vendor/glad/include)
 
 find_package(OpenGL REQUIRED)
 
@@ -31,7 +42,12 @@ add_executable(CityBuilder
     src/main.cpp
 )
 
-target_link_libraries(CityBuilder PRIVATE glfw OpenGL::GL)
+target_link_libraries(CityBuilder PRIVATE
+    glfw
+    glad
+    glm::glm
+    OpenGL::GL
+)
 
 if(MSVC)
     target_compile_options(CityBuilder PRIVATE /W4 /permissive-)

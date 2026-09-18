@@ -4,6 +4,10 @@ A starter project for a 3D city builder made with C++20, OpenGL, and GLFW.
 It currently opens a resizable 1280×720 OpenGL window with a dark background.
 Press **Escape** or close the window to exit.
 
+The project uses GLAD to load modern OpenGL functions and GLM for graphics
+math. GLAD's generated OpenGL 3.3 loader is included in the repository; CMake
+downloads GLFW and GLM during configuration, so no manual SDK setup is required.
+
 ## Requirements
 
 - Visual Studio 2022 with **Desktop development with C++**
@@ -11,7 +15,8 @@ Press **Escape** or close the window to exit.
 - Git
 - Doxygen (optional, for API documentation)
 
-GLFW 3.4 is downloaded automatically by CMake during the first configuration.
+GLFW 3.4 and GLM 1.0.3 are downloaded automatically by CMake during the first
+configuration. The bundled loader was generated with GLAD 2.0.8.
 
 ## Build and run
 
@@ -48,9 +53,8 @@ CMakePresets.json     Visual Studio build presets
 
 ## Next steps
 
-Good early milestones are an OpenGL function loader, camera controls, shader
-management, a grid renderer, and an entity/component model for buildings and
-roads.
+Good early milestones are camera controls, shader management, a grid renderer,
+and an entity/component model for buildings and roads.
 
 ## License
 
