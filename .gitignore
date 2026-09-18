@@ -1,0 +1,30 @@
+# Build output
+/build/
+/out/
+/cmake-build-*/
+
+# Visual Studio
+/.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Compiled files
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.lib
+*.exp
+
+# Generated documentation
+/docs/html/
+/docs/latex/
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
