@@ -31,7 +31,14 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 
-FetchContent_MakeAvailable(glfw glm)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.17.0
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glfw glm spdlog)
 
 add_library(glad STATIC vendor/glad/src/gl.c)
 target_include_directories(glad PUBLIC vendor/glad/include)
@@ -46,6 +53,7 @@ target_link_libraries(CityBuilder PRIVATE
     glfw
     glad
     glm::glm
+    spdlog::spdlog
     OpenGL::GL
 )
 

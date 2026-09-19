@@ -1,10 +1,10 @@
 #include <cstdlib>
-#include <iostream>
 
 #define GLFW_INCLUDE_NONE
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
+#include <spdlog/spdlog.h>
 
 namespace {
 
@@ -15,7 +15,7 @@ constexpr glm::vec3 kClearColor{0.08F, 0.12F, 0.18F};
 
 void glfwErrorCallback(const int error, const char* description)
 {
-    std::cerr << "GLFW error " << error << ": " << description << '\n';
+    spdlog::error("GLFW error {}: {}", error, description);
 }
 
 void framebufferSizeCallback(GLFWwindow*, const int width, const int height)
@@ -38,10 +38,14 @@ void processInput(GLFWwindow* window)
  */
 int main()
 {
+    spdlog::set_pattern("[%H:%M:%S] [%^%l%$] %v");
+    spdlog::set_level(spdlog::level::debug);
+    spdlog::info("Starting City Builder");
+
     glfwSetErrorCallback(glfwErrorCallback);
 
     if (glfwInit() != GLFW_TRUE) {
-        std::cerr << "Unable to initialise GLFW.\n";
+        spdlog::critical("Unable to initialise GLFW");
         return EXIT_FAILURE;
     }
 
@@ -58,7 +62,7 @@ int main()
     );
 
     if (window == nullptr) {
-        std::cerr << "Unable to create the application window.\n";
+        spdlog::critical("Unable to create the application window");
         glfwTerminate();
         return EXIT_FAILURE;
     }
@@ -67,15 +71,17 @@ int main()
 
     const int openGlVersion = gladLoadGL(glfwGetProcAddress);
     if (openGlVersion == 0) {
-        std::cerr << "Unable to load OpenGL functions with GLAD.\n";
+        spdlog::critical("Unable to load OpenGL functions with GLAD");
         glfwDestroyWindow(window);
         glfwTerminate();
         return EXIT_FAILURE;
     }
 
-    std::cout << "Loaded OpenGL "
-              << GLAD_VERSION_MAJOR(openGlVersion) << '.'
-              << GLAD_VERSION_MINOR(openGlVersion) << '\n';
+    spdlog::info(
+        "Loaded OpenGL {}.{}",
+        GLAD_VERSION_MAJOR(openGlVersion),
+        GLAD_VERSION_MINOR(openGlVersion)
+    );
 
     glfwSwapInterval(1);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
@@ -97,5 +103,6 @@ int main()
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    spdlog::info("City Builder shut down cleanly");
     return EXIT_SUCCESS;
 }
