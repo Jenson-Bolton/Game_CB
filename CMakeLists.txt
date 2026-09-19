@@ -45,9 +45,29 @@ target_include_directories(glad PUBLIC vendor/glad/include)
 
 find_package(OpenGL REQUIRED)
 
-add_executable(CityBuilder
+set(CITY_BUILDER_SOURCES
     src/main.cpp
+    src/Core/Application.cpp
+    src/Core/Window.cpp
+    src/Rendering/Mesh.cpp
+    src/Rendering/Renderer.cpp
+    src/Rendering/Shader.cpp
+    src/Scene/Camera.cpp
 )
+
+set(CITY_BUILDER_HEADERS
+    include/CityBuilder/Core/Application.hpp
+    include/CityBuilder/Core/Window.hpp
+    include/CityBuilder/Rendering/Mesh.hpp
+    include/CityBuilder/Rendering/Renderer.hpp
+    include/CityBuilder/Rendering/Shader.hpp
+    include/CityBuilder/Scene/Camera.hpp
+)
+
+add_executable(CityBuilder ${CITY_BUILDER_SOURCES} ${CITY_BUILDER_HEADERS})
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${CITY_BUILDER_SOURCES} ${CITY_BUILDER_HEADERS})
+
+target_include_directories(CityBuilder PRIVATE include)
 
 target_link_libraries(CityBuilder PRIVATE
     glfw
@@ -58,7 +78,7 @@ target_link_libraries(CityBuilder PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(CityBuilder PRIVATE /W4 /permissive-)
+    target_compile_options(CityBuilder PRIVATE /W4 /permissive- /Zc:__cplusplus)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT CityBuilder)
 else()
     target_compile_options(CityBuilder PRIVATE -Wall -Wextra -Wpedantic)
@@ -66,6 +86,14 @@ endif()
 
 set_target_properties(CityBuilder PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:CityBuilder>"
+)
+
+add_custom_command(TARGET CityBuilder POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:CityBuilder>/assets"
+    COMMENT "Copying runtime assets"
 )
 
 find_package(Doxygen)

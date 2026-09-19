@@ -1,13 +1,23 @@
 # City Builder
 
-A starter project for a 3D city builder made with C++20, OpenGL, and GLFW.
-It currently opens a resizable 1280×720 OpenGL window with a dark background.
-Press **Escape** or close the window to exit.
+A C++20 and OpenGL foundation for a 3D city-building game. The current build
+opens a resizable window and renders a rotating, depth-tested cube through a
+small reusable rendering layer.
 
-The project uses GLAD to load modern OpenGL functions, GLM for graphics math,
-and spdlog for structured application logging. GLAD's generated OpenGL 3.3
-loader is included in the repository; CMake downloads GLFW, GLM, and spdlog
-during configuration, so no manual SDK setup is required.
+## Included
+
+- GLFW 3.4 for windows, input, and the OpenGL context
+- GLAD 2.0.8 with a bundled OpenGL 3.3 loader
+- GLM 1.0.3 for vectors, matrices, and camera transforms
+- spdlog 1.17.0 for structured diagnostics
+- CMake and a Visual Studio 2022 preset
+- Doxygen configuration and a Windows GitHub Actions build
+- RAII wrappers for the application, window, shaders, and GPU meshes
+- OpenGL debug output, depth testing, back-face culling, and resize handling
+- A free-fly camera and runtime shader assets
+
+CMake downloads GLFW, GLM, and spdlog during the first configuration. No
+separate SDK installation is required for those libraries.
 
 ## Requirements
 
@@ -15,10 +25,6 @@ during configuration, so no manual SDK setup is required.
 - CMake 3.24 or newer
 - Git
 - Doxygen (optional, for API documentation)
-
-GLFW 3.4, GLM 1.0.3, and spdlog 1.17.0 are downloaded automatically by CMake
-during the first configuration. The bundled loader was generated with GLAD
-2.0.8.
 
 ## Build and run
 
@@ -30,12 +36,20 @@ cmake --build --preset debug
 .\build\bin\Debug\CityBuilder.exe
 ```
 
-Or open `build/CityBuilder.sln` in Visual Studio after running the first command.
-`CityBuilder` is configured as the startup project.
+Alternatively, open `build/CityBuilder.sln`. `CityBuilder` is the startup
+project and its debugger working directory points at the executable folder, so
+the copied shader assets are found automatically.
+
+## Controls
+
+- `W`, `A`, `S`, `D`: move forward, left, backward, and right
+- `Q`, `E`: move down and up
+- Arrow keys: look around
+- `Escape`: close the application
 
 ## Documentation
 
-Generate the HTML documentation after configuring the project:
+Generate the HTML API documentation after configuring the project:
 
 ```powershell
 cmake --build build --target docs
@@ -46,17 +60,18 @@ Then open `build/docs/html/index.html`.
 ## Project layout
 
 ```text
-src/                 Application source code
-docs/                Doxygen configuration
-.github/workflows/   Continuous integration
-CMakeLists.txt        Build definition
-CMakePresets.json     Visual Studio build presets
+assets/shaders/       GLSL shader source copied beside the executable
+include/CityBuilder/  Public project headers
+src/                  Application and rendering implementation
+docs/                 Doxygen configuration
+vendor/glad/          Generated OpenGL loader
+.github/workflows/    Continuous integration
 ```
 
-## Next steps
+## Next milestone
 
-Good early milestones are camera controls, shader management, a grid renderer,
-and an entity/component model for buildings and roads.
+Build a ground grid and mouse-to-world picking on top of this foundation, then
+add tile highlighting and simple building placement.
 
 ## License
 

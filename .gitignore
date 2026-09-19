@@ -18,6 +18,11 @@
 *.dll
 *.lib
 *.exp
+*.log
+
+# Runtime captures and temporary checks
+/captures/
+/Testing/
 
 # Generated documentation
 /docs/html/
