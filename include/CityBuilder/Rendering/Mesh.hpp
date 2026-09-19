@@ -1,14 +1,22 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 
-#include <glm/vec3.hpp>
+#include "CityBuilder/Rendering/PrimitiveTopology.hpp"
+#include "CityBuilder/Rendering/Vertex.hpp"
 
 namespace citybuilder {
 
-/** Vertex/index buffer collection with a fixed position-and-colour layout. */
+/** @brief Owns an OpenGL vertex array and its static vertex/index buffers. */
 class Mesh final {
 public:
+    /** Uploads immutable mesh data using the shared Vertex layout. */
+    Mesh(
+        std::span<const Vertex> vertices,
+        std::span<const std::uint32_t> indices,
+        PrimitiveTopology topology
+    );
     ~Mesh();
 
     Mesh(const Mesh&) = delete;
@@ -18,25 +26,17 @@ public:
     /** Transfers ownership of GPU buffers. */
     Mesh& operator=(Mesh&& other) noexcept;
 
-    /** Creates the foundation's depth-tested demonstration cube. */
-    [[nodiscard]] static Mesh cube();
-
-    /** Draws the mesh using its index buffer. */
+    /** Draws the complete indexed mesh. */
     void draw() const noexcept;
 
 private:
-    struct Vertex {
-        glm::vec3 position;
-        glm::vec3 color;
-    };
-
-    Mesh(std::span<const Vertex> vertices, std::span<const unsigned int> indices);
     void release() noexcept;
 
-    unsigned int m_vertexArray{0};
-    unsigned int m_vertexBuffer{0};
-    unsigned int m_indexBuffer{0};
-    int m_indexCount{0};
+    unsigned int m_vertexArray{};
+    unsigned int m_vertexBuffer{};
+    unsigned int m_indexBuffer{};
+    unsigned int m_drawMode{};
+    int m_indexCount{};
 };
 
 } // namespace citybuilder

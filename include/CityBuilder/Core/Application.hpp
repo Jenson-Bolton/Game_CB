@@ -2,35 +2,40 @@
 
 #include <filesystem>
 
+#include "CityBuilder/Core/GameClock.hpp"
 #include "CityBuilder/Core/Window.hpp"
-#include "CityBuilder/Rendering/Mesh.hpp"
 #include "CityBuilder/Rendering/Renderer.hpp"
-#include "CityBuilder/Rendering/Shader.hpp"
+#include "CityBuilder/Rendering/WorldRenderer.hpp"
+#include "CityBuilder/Resources/AssetLocator.hpp"
 #include "CityBuilder/Scene/Camera.hpp"
+#include "CityBuilder/Scene/CameraController.hpp"
+#include "CityBuilder/World/World.hpp"
 
 namespace citybuilder {
 
-/** Owns the engine-level services and runs the main loop. */
+/** @brief Composition root that owns engine services and coordinates the game loop. */
 class Application final {
 public:
-    /** Creates the window and rendering resources located beside the executable. */
+    /** Creates engine services and runtime resources located beside the executable. */
     explicit Application(const std::filesystem::path& executablePath);
 
     Application(const Application&) = delete;
     Application& operator=(const Application&) = delete;
 
-    /** Runs until the user closes the window. */
+    /** Runs the application until its window is closed. */
     int run();
 
 private:
-    void processInput(float deltaSeconds);
+    void processInput();
 
-    std::filesystem::path m_assetRoot;
     Window m_window;
     Renderer m_renderer;
-    Shader m_shader;
-    Mesh m_cube;
+    AssetLocator m_assets;
+    GameClock m_clock;
+    World m_world;
     Camera m_camera;
+    CameraController m_cameraController;
+    WorldRenderer m_worldRenderer;
 };
 
 } // namespace citybuilder

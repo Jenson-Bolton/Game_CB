@@ -1,18 +1,34 @@
 #include "CityBuilder/Rendering/Mesh.hpp"
 
-#include <array>
 #include <cstddef>
+#include <stdexcept>
 #include <utility>
 
 #include <glad/gl.h>
 
 namespace citybuilder {
+namespace {
+
+[[nodiscard]] unsigned int openGlMode(const PrimitiveTopology topology)
+{
+    switch (topology) {
+    case PrimitiveTopology::Triangles:
+        return GL_TRIANGLES;
+    case PrimitiveTopology::Lines:
+        return GL_LINES;
+    }
+    throw std::invalid_argument{"Unsupported primitive topology"};
+}
+
+} // namespace
 
 Mesh::Mesh(
     const std::span<const Vertex> vertices,
-    const std::span<const unsigned int> indices
+    const std::span<const std::uint32_t> indices,
+    const PrimitiveTopology topology
 )
-    : m_indexCount{static_cast<int>(indices.size())}
+    : m_drawMode{openGlMode(topology)}
+    , m_indexCount{static_cast<int>(indices.size())}
 {
     glGenVertexArrays(1, &m_vertexArray);
     glGenBuffers(1, &m_vertexBuffer);
@@ -26,7 +42,6 @@ Mesh::Mesh(
         vertices.data(),
         GL_STATIC_DRAW
     );
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
     glBufferData(
         GL_ELEMENT_ARRAY_BUFFER,
@@ -37,21 +52,23 @@ Mesh::Mesh(
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
-        0,
-        3,
-        GL_FLOAT,
-        GL_FALSE,
-        sizeof(Vertex),
+        0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
         reinterpret_cast<const void*>(offsetof(Vertex, position))
     );
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(
-        1,
-        3,
-        GL_FLOAT,
-        GL_FALSE,
-        sizeof(Vertex),
+        1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        reinterpret_cast<const void*>(offsetof(Vertex, normal))
+    );
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
         reinterpret_cast<const void*>(offsetof(Vertex, color))
+    );
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(
+        3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+        reinterpret_cast<const void*>(offsetof(Vertex, textureCoordinate))
     );
     glBindVertexArray(0);
 }
@@ -65,6 +82,7 @@ Mesh::Mesh(Mesh&& other) noexcept
     : m_vertexArray{std::exchange(other.m_vertexArray, 0)}
     , m_vertexBuffer{std::exchange(other.m_vertexBuffer, 0)}
     , m_indexBuffer{std::exchange(other.m_indexBuffer, 0)}
+    , m_drawMode{std::exchange(other.m_drawMode, 0)}
     , m_indexCount{std::exchange(other.m_indexCount, 0)}
 {
 }
@@ -76,40 +94,16 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept
         m_vertexArray = std::exchange(other.m_vertexArray, 0);
         m_vertexBuffer = std::exchange(other.m_vertexBuffer, 0);
         m_indexBuffer = std::exchange(other.m_indexBuffer, 0);
+        m_drawMode = std::exchange(other.m_drawMode, 0);
         m_indexCount = std::exchange(other.m_indexCount, 0);
     }
     return *this;
 }
 
-Mesh Mesh::cube()
-{
-    constexpr std::array vertices{
-        Vertex{{-1.0F, -1.0F, -1.0F}, {0.90F, 0.25F, 0.25F}},
-        Vertex{{1.0F, -1.0F, -1.0F}, {0.25F, 0.80F, 0.35F}},
-        Vertex{{1.0F, 1.0F, -1.0F}, {0.25F, 0.45F, 0.95F}},
-        Vertex{{-1.0F, 1.0F, -1.0F}, {0.95F, 0.75F, 0.25F}},
-        Vertex{{-1.0F, -1.0F, 1.0F}, {0.75F, 0.30F, 0.90F}},
-        Vertex{{1.0F, -1.0F, 1.0F}, {0.20F, 0.85F, 0.85F}},
-        Vertex{{1.0F, 1.0F, 1.0F}, {0.95F, 0.55F, 0.20F}},
-        Vertex{{-1.0F, 1.0F, 1.0F}, {0.40F, 0.70F, 0.95F}},
-    };
-
-    constexpr std::array<unsigned int, 36> indices{
-        0, 2, 1, 0, 3, 2,
-        4, 5, 6, 4, 6, 7,
-        0, 1, 5, 0, 5, 4,
-        3, 7, 6, 3, 6, 2,
-        0, 4, 7, 0, 7, 3,
-        1, 2, 6, 1, 6, 5,
-    };
-
-    return Mesh{vertices, indices};
-}
-
 void Mesh::draw() const noexcept
 {
     glBindVertexArray(m_vertexArray);
-    glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(m_drawMode, m_indexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 
@@ -124,9 +118,10 @@ void Mesh::release() noexcept
     if (m_vertexArray != 0) {
         glDeleteVertexArrays(1, &m_vertexArray);
     }
-    m_indexBuffer = 0;
-    m_vertexBuffer = 0;
     m_vertexArray = 0;
+    m_vertexBuffer = 0;
+    m_indexBuffer = 0;
+    m_drawMode = 0;
     m_indexCount = 0;
 }
 

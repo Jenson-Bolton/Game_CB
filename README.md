@@ -1,8 +1,8 @@
 # City Builder
 
 A C++20 and OpenGL foundation for a 3D city-building game. The current build
-opens a resizable window and renders a rotating, depth-tested cube through a
-small reusable rendering layer.
+opens a resizable window, renders a finite 64x64 city grid, and provides
+city-builder pan, orbit, and zoom controls.
 
 ## Included
 
@@ -14,7 +14,11 @@ small reusable rendering layer.
 - Doxygen configuration and a Windows GitHub Actions build
 - RAII wrappers for the application, window, shaders, and GPU meshes
 - OpenGL debug output, depth testing, back-face culling, and resize handling
-- A free-fly camera and runtime shader assets
+- A fixed-rate 60 Hz world clock with frame-rate-independent navigation
+- Passive, contiguous world-grid and tile data with coordinate conversion
+- A city-builder camera with keyboard pan, mouse pan/orbit, and wheel zoom
+- Separate ground, grid, and world rendering components
+- A small runtime asset locator and copied GLSL shader assets
 
 CMake downloads GLFW, GLM, and spdlog during the first configuration. No
 separate SDK installation is required for those libraries.
@@ -42,10 +46,17 @@ the copied shader assets are found automatically.
 
 ## Controls
 
-- `W`, `A`, `S`, `D`: move forward, left, backward, and right
-- `Q`, `E`: move down and up
-- Arrow keys: look around
+- `W`, `A`, `S`, `D`: pan across the ground
+- Middle-mouse drag: pan across the ground
+- Right-mouse drag: orbit around the focus point
+- Mouse wheel: zoom
+- Arrow keys: keyboard orbit controls
 - `Escape`: close the application
+
+The input layer targets an ANSI 60% keyboard. Logical arrow keys and F1-F12
+are supported when the keyboard firmware emits them through its Fn layer. The
+physical Fn modifier itself is handled inside the keyboard and is not exposed
+to GLFW or the operating system.
 
 ## Documentation
 
@@ -60,9 +71,9 @@ Then open `build/docs/html/index.html`.
 ## Project layout
 
 ```text
-assets/shaders/       GLSL shader source copied beside the executable
-include/CityBuilder/  Public project headers
-src/                  Application and rendering implementation
+assets/shaders/       Ground, grid, and reusable GLSL shaders
+include/CityBuilder/  Core, resources, rendering, scene, and world interfaces
+src/                  Mirrored subsystem implementations
 docs/                 Doxygen configuration
 vendor/glad/          Generated OpenGL loader
 .github/workflows/    Continuous integration
@@ -70,8 +81,8 @@ vendor/glad/          Generated OpenGL loader
 
 ## Next milestone
 
-Build a ground grid and mouse-to-world picking on top of this foundation, then
-add tile highlighting and simple building placement.
+Add mouse-to-world ray casting, tile highlighting, and simple building
+placement on top of the grid coordinate conversions.
 
 ## License
 

@@ -3,6 +3,8 @@
 #include <string_view>
 #include <utility>
 
+#include "CityBuilder/Core/Input.hpp"
+
 struct GLFWwindow;
 
 namespace citybuilder {
@@ -23,10 +25,12 @@ public:
     [[nodiscard]] GLFWwindow* nativeHandle() const noexcept;
     /** Reports whether the window has been asked to close. */
     [[nodiscard]] bool shouldClose() const noexcept;
-    /** Reports whether a GLFW key is currently pressed. */
-    [[nodiscard]] bool isKeyPressed(int key) const noexcept;
     /** Returns the drawable framebuffer dimensions in pixels. */
     [[nodiscard]] std::pair<int, int> framebufferSize() const noexcept;
+    /** @return Mutable input state populated by the window callbacks. */
+    [[nodiscard]] Input& input() noexcept;
+    /** @return Read-only input state populated by the window callbacks. */
+    [[nodiscard]] const Input& input() const noexcept;
 
     /** Marks the window to close at the end of the current frame. */
     void requestClose() noexcept;
@@ -38,8 +42,13 @@ public:
 private:
     static void errorCallback(int error, const char* description);
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+    static void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modifiers);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int modifiers);
+    static void cursorPositionCallback(GLFWwindow* window, double x, double y);
+    static void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
 
     GLFWwindow* m_window{nullptr};
+    Input m_input;
     int m_framebufferWidth{0};
     int m_framebufferHeight{0};
 };

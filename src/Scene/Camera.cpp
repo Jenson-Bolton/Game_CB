@@ -3,20 +3,15 @@
 #include <algorithm>
 #include <cmath>
 
-#include <GLFW/glfw3.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/geometric.hpp>
 #include <glm/trigonometric.hpp>
 
-#include "CityBuilder/Core/Window.hpp"
-
 namespace citybuilder {
 namespace {
 
 constexpr glm::vec3 kWorldUp{0.0F, 1.0F, 0.0F};
-constexpr float kMoveSpeed = 5.0F;
-constexpr float kLookSpeed = 70.0F;
 
 } // namespace
 
@@ -25,55 +20,25 @@ Camera::Camera(const glm::vec3 position)
 {
 }
 
-void Camera::update(const Window& window, const float deltaSeconds)
+void Camera::setPosition(const glm::vec3 position) noexcept
 {
-    const float moveStep = kMoveSpeed * deltaSeconds;
-    const float lookStep = kLookSpeed * deltaSeconds;
-    const glm::vec3 facing = forward();
-    const glm::vec3 right = glm::normalize(glm::cross(facing, kWorldUp));
-
-    if (window.isKeyPressed(GLFW_KEY_W)) {
-        m_position += facing * moveStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_S)) {
-        m_position -= facing * moveStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_A)) {
-        m_position -= right * moveStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_D)) {
-        m_position += right * moveStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_Q)) {
-        m_position -= kWorldUp * moveStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_E)) {
-        m_position += kWorldUp * moveStep;
-    }
-
-    if (window.isKeyPressed(GLFW_KEY_LEFT)) {
-        m_yawDegrees -= lookStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_RIGHT)) {
-        m_yawDegrees += lookStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_UP)) {
-        m_pitchDegrees += lookStep;
-    }
-    if (window.isKeyPressed(GLFW_KEY_DOWN)) {
-        m_pitchDegrees -= lookStep;
-    }
-    m_pitchDegrees = std::clamp(m_pitchDegrees, -89.0F, 89.0F);
+    m_position = position;
 }
 
-glm::mat4 Camera::viewMatrix() const
+void Camera::setOrientation(const float yawDegrees, const float pitchDegrees) noexcept
 {
-    return glm::lookAt(m_position, m_position + forward(), kWorldUp);
+    m_yawDegrees = yawDegrees;
+    m_pitchDegrees = std::clamp(pitchDegrees, -89.0F, 89.0F);
 }
 
-glm::mat4 Camera::projectionMatrix(const float aspectRatio) const
+void Camera::setFieldOfView(const float fieldOfViewDegrees) noexcept
 {
-    return glm::perspective(glm::radians(60.0F), aspectRatio, 0.1F, 500.0F);
+    m_fieldOfViewDegrees = std::clamp(fieldOfViewDegrees, 20.0F, 100.0F);
+}
+
+const glm::vec3& Camera::position() const noexcept
+{
+    return m_position;
 }
 
 glm::vec3 Camera::forward() const
@@ -85,6 +50,21 @@ glm::vec3 Camera::forward() const
         std::sin(pitch),
         std::sin(yaw) * std::cos(pitch),
     });
+}
+
+glm::vec3 Camera::right() const
+{
+    return glm::normalize(glm::cross(forward(), kWorldUp));
+}
+
+glm::mat4 Camera::viewMatrix() const
+{
+    return glm::lookAt(m_position, m_position + forward(), kWorldUp);
+}
+
+glm::mat4 Camera::projectionMatrix(const float aspectRatio) const
+{
+    return glm::perspective(glm::radians(m_fieldOfViewDegrees), aspectRatio, 0.1F, 500.0F);
 }
 
 } // namespace citybuilder
