@@ -43,49 +43,18 @@ FetchContent_MakeAvailable(glfw glm spdlog)
 add_library(glad STATIC vendor/glad/src/gl.c)
 target_include_directories(glad PUBLIC vendor/glad/include)
 
+add_library(stb_image STATIC src/ThirdParty/stb_image.cpp)
+target_include_directories(stb_image PUBLIC vendor/stb)
+
 find_package(OpenGL REQUIRED)
 
 set(CITY_BUILDER_SOURCES
     src/main.cpp
-    src/Core/Application.cpp
-    src/Core/GameClock.cpp
-    src/Core/Input.cpp
-    src/Core/Window.cpp
-    src/Rendering/GridRenderer.cpp
-    src/Rendering/GroundRenderer.cpp
-    src/Rendering/Mesh.cpp
-    src/Rendering/Renderer.cpp
     src/Rendering/Shader.cpp
-    src/Rendering/WorldRenderer.cpp
-    src/Resources/AssetLocator.cpp
-    src/Scene/Camera.cpp
-    src/Scene/CameraController.cpp
-    src/World/Grid.cpp
-    src/World/World.cpp
 )
 
 set(CITY_BUILDER_HEADERS
-    include/CityBuilder/Core/Application.hpp
-    include/CityBuilder/Core/GameClock.hpp
-    include/CityBuilder/Core/Input.hpp
-    include/CityBuilder/Core/Window.hpp
-    include/CityBuilder/Rendering/GridRenderer.hpp
-    include/CityBuilder/Rendering/GroundRenderer.hpp
-    include/CityBuilder/Rendering/Mesh.hpp
-    include/CityBuilder/Rendering/PrimitiveTopology.hpp
-    include/CityBuilder/Rendering/Renderer.hpp
-    include/CityBuilder/Rendering/RenderView.hpp
     include/CityBuilder/Rendering/Shader.hpp
-    include/CityBuilder/Rendering/Vertex.hpp
-    include/CityBuilder/Rendering/WorldRenderer.hpp
-    include/CityBuilder/Resources/AssetLocator.hpp
-    include/CityBuilder/Scene/Camera.hpp
-    include/CityBuilder/Scene/CameraController.hpp
-    include/CityBuilder/World/Grid.hpp
-    include/CityBuilder/World/GridConfig.hpp
-    include/CityBuilder/World/GridCoordinate.hpp
-    include/CityBuilder/World/Tile.hpp
-    include/CityBuilder/World/World.hpp
 )
 
 add_executable(CityBuilder ${CITY_BUILDER_SOURCES} ${CITY_BUILDER_HEADERS})
@@ -96,6 +65,7 @@ target_include_directories(CityBuilder PRIVATE include)
 target_link_libraries(CityBuilder PRIVATE
     glfw
     glad
+    stb_image
     glm::glm
     spdlog::spdlog
     OpenGL::GL
