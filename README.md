@@ -36,32 +36,6 @@ The intended simulation includes:
 The project draws inspiration from *Cities: Skylines*, *Townscaper*, *Tiny
 Glade*, *Manor Lords*, and James Simo's procedural city-development work.
 
-## Current state
-
-The implementation is a LearnOpenGL chapter 7 baseline. It opens a resizable
-OpenGL 3.3 window and draws two indexed, textured rectangles. The container
-and transparent-face images are loaded from disk with `stb_image`, mixed in a
-file-backed fragment shader, and transformed with GLM matrices. One rectangle
-rotates while the other continuously scales. Press `Escape` to close the
-application.
-
-## Near-term milestone
-
-Build a small gridless planning prototype that proves the core interaction
-before expanding the economic simulation:
-
-- Convert the mouse position into a point on the ground plane
-- Draw and edit a simple road or planning boundary in world space
-- Represent and select an irregular parcel independently of the test grid
-- Apply a zoning category and one or two planning restrictions
-- Visualise the parcel's current planning and development state
-- Advance it through a minimal development sequence using placeholder geometry
-
-This milestone should establish the parcel as the authoritative unit of play.
-The existing tile grid may remain useful internally for terrain sampling or
-other spatial queries, but it should not become the public building-placement
-model.
-
 ## Technology
 
 - C++20
@@ -102,6 +76,12 @@ project.
 
 ## Controls
 
+- `W`, `A`, `S`, `D`: move across the ground plane
+- Hold `Shift`: move faster
+- Right-mouse drag: orbit around the current focus point
+- Middle-mouse drag: pan the ground plane
+- Mouse wheel: zoom
+- Arrow keys: keyboard orbit controls
 - `Escape`: close the application
 
 ## Documentation
@@ -113,30 +93,6 @@ cmake --build build --target docs
 ```
 
 Then open `build/docs/html/index.html`.
-
-## Project layout
-
-```text
-assets/shaders/          Runtime GLSL vertex and fragment shaders
-assets/textures/         LearnOpenGL sample textures
-include/CityBuilder/     Engine-facing C++ interfaces
-src/Rendering/           Shader loading, compilation, and uniforms
-src/ThirdParty/          stb_image implementation translation unit
-src/main.cpp             Chapter 7 application and render loop
-vendor/glad/             Generated OpenGL loader
-vendor/stb/              Single-header image loader
-.github/workflows/       Continuous integration
-```
-
-## Learning source
-
-The baseline follows Joey de Vries' LearnOpenGL chapters
-[Hello Triangle](https://learnopengl.com/Getting-started/Hello-Triangle) and
-[Shaders](https://learnopengl.com/Getting-started/Shaders), then continues
-through [Textures](https://learnopengl.com/Getting-started/Textures) and
-[Transformations](https://learnopengl.com/Getting-started/Transformations).
-See `THIRD_PARTY_NOTICES.md` for attribution and licensing.
-
 ## License
 
 Licensed under the [MIT License](LICENSE).

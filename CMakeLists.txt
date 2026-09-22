@@ -48,17 +48,32 @@ target_include_directories(stb_image PUBLIC vendor/stb)
 
 find_package(OpenGL REQUIRED)
 
-set(CITY_BUILDER_SOURCES
-    src/main.cpp
-    src/Rendering/Shader.cpp
+file(GLOB_RECURSE CITY_BUILDER_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+)
+list(FILTER CITY_BUILDER_SOURCES EXCLUDE REGEX "/ThirdParty/")
+
+file(GLOB_RECURSE CITY_BUILDER_HEADERS CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
 )
 
-set(CITY_BUILDER_HEADERS
-    include/CityBuilder/Rendering/Shader.hpp
+set(CITY_BUILDER_SHADERS
+    assets/shaders/ground.frag
+    assets/shaders/ground.vert
+    assets/shaders/textured.frag
+    assets/shaders/textured.vert
 )
 
-add_executable(CityBuilder ${CITY_BUILDER_SOURCES} ${CITY_BUILDER_HEADERS})
+set_source_files_properties(${CITY_BUILDER_SHADERS} PROPERTIES HEADER_FILE_ONLY TRUE)
+
+add_executable(CityBuilder
+    ${CITY_BUILDER_SOURCES}
+    ${CITY_BUILDER_HEADERS}
+    ${CITY_BUILDER_SHADERS}
+)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${CITY_BUILDER_SOURCES} ${CITY_BUILDER_HEADERS})
+source_group("Shaders" FILES ${CITY_BUILDER_SHADERS})
 
 target_include_directories(CityBuilder PRIVATE include)
 

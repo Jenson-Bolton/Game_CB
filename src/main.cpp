@@ -1,108 +1,146 @@
-// Adapted from the LearnOpenGL "Hello Triangle", "Shaders", "Textures",
-// and "Transformations" chapters.
+// Adapted from the LearnOpenGL getting-started chapters through "Camera".
 // The adapted sample code in this file is licensed under CC BY-NC 4.0.
 
-#include <cmath>
+#include <algorithm>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
-#include <stdexcept>
-#include <string>
 
 #include <glad/gl.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
 #include <spdlog/spdlog.h>
-#include <stb_image.h>
 
 #include "CityBuilder/Rendering/Shader.hpp"
+#include "CityBuilder/Scene/Camera.hpp"
 
 namespace {
 
 constexpr int windowWidth = 800;
 constexpr int windowHeight = 600;
 
-void framebufferSizeCallback(GLFWwindow*, const int width, const int height)
+struct ApplicationState {
+    citybuilder::Camera camera;
+    int framebufferWidth = windowWidth;
+    int framebufferHeight = windowHeight;
+    double previousCursorX = 0.0;
+    double previousCursorY = 0.0;
+    bool cursorInitialised = false;
+};
+
+ApplicationState* applicationState(GLFWwindow* window)
 {
-    glViewport(0, 0, width, height);
+    return static_cast<ApplicationState*>(glfwGetWindowUserPointer(window));
 }
 
-void processInput(GLFWwindow* window)
+void framebufferSizeCallback(GLFWwindow* window, const int width, const int height)
+{
+    glViewport(0, 0, width, height);
+
+    ApplicationState* state = applicationState(window);
+    if (state != nullptr) {
+        state->framebufferWidth = width;
+        state->framebufferHeight = height;
+    }
+}
+
+void cursorPositionCallback(GLFWwindow* window, const double x, const double y)
+{
+    ApplicationState* state = applicationState(window);
+    if (state == nullptr) {
+        return;
+    }
+
+    if (!state->cursorInitialised) {
+        state->previousCursorX = x;
+        state->previousCursorY = y;
+        state->cursorInitialised = true;
+        return;
+    }
+
+    const double deltaX = x - state->previousCursorX;
+    const double deltaY = y - state->previousCursorY;
+    state->previousCursorX = x;
+    state->previousCursorY = y;
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        constexpr float orbitSensitivity = 0.2F;
+        state->camera.orbit(
+            static_cast<float>(deltaX) * orbitSensitivity,
+            static_cast<float>(-deltaY) * orbitSensitivity
+        );
+    }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) {
+        const float panScale = state->camera.distance() * 0.0015F;
+        state->camera.pan(
+            static_cast<float>(-deltaX) * panScale,
+            static_cast<float>(deltaY) * panScale
+        );
+    }
+}
+
+void scrollCallback(GLFWwindow* window, double, const double yOffset)
+{
+    ApplicationState* state = applicationState(window);
+    if (state != nullptr) {
+        state->camera.zoom(static_cast<float>(yOffset));
+    }
+}
+
+void processInput(
+    GLFWwindow* window,
+    ApplicationState& state,
+    const float deltaTime
+)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
-}
 
-unsigned int loadTexture(const std::filesystem::path& path)
-{
-    int width = 0;
-    int height = 0;
-    int channelCount = 0;
-    unsigned char* pixels = stbi_load(
-        path.string().c_str(),
-        &width,
-        &height,
-        &channelCount,
-        0
-    );
-    if (pixels == nullptr) {
-        const char* reason = stbi_failure_reason();
-        throw std::runtime_error{
-            "Unable to load texture " + path.string() + ": " +
-            (reason != nullptr ? reason : "unknown image error")
-        };
+    float forward = 0.0F;
+    float right = 0.0F;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        forward += 1.0F;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        forward -= 1.0F;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        right += 1.0F;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        right -= 1.0F;
     }
 
-    unsigned int format = 0;
-    switch (channelCount) {
-    case 1:
-        format = GL_RED;
-        break;
-    case 2:
-        format = GL_RG;
-        break;
-    case 3:
-        format = GL_RGB;
-        break;
-    case 4:
-        format = GL_RGBA;
-        break;
-    default:
-        stbi_image_free(pixels);
-        throw std::runtime_error{
-            "Unsupported channel count in texture: " + path.string()
-        };
+    float movementSpeed = std::max(4.0F, state.camera.distance() * 0.75F);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+        movementSpeed *= 3.0F;
     }
-
-    unsigned int texture = 0;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        static_cast<int>(format),
-        width,
-        height,
-        0,
-        format,
-        GL_UNSIGNED_BYTE,
-        pixels
+    state.camera.pan(
+        right * movementSpeed * deltaTime,
+        forward * movementSpeed * deltaTime
     );
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(pixels);
-    return texture;
+    constexpr float keyboardOrbitSpeed = 70.0F;
+    float yaw = 0.0F;
+    float pitch = 0.0F;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        yaw -= keyboardOrbitSpeed * deltaTime;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        yaw += keyboardOrbitSpeed * deltaTime;
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        pitch += keyboardOrbitSpeed * deltaTime;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        pitch -= keyboardOrbitSpeed * deltaTime;
+    }
+    state.camera.orbit(yaw, pitch);
 }
 
 } // namespace
@@ -124,7 +162,7 @@ int main(const int argc, char* argv[])
     GLFWwindow* window = glfwCreateWindow(
         windowWidth,
         windowHeight,
-        "LearnOpenGL - Chapter 7 Transformations",
+        "CityBuilder - Planning Camera",
         nullptr,
         nullptr
     );
@@ -136,7 +174,12 @@ int main(const int argc, char* argv[])
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+    ApplicationState state{};
+    glfwSetWindowUserPointer(window, &state);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetCursorPosCallback(window, cursorPositionCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 
     if (gladLoadGL(glfwGetProcAddress) == 0) {
         spdlog::error("Failed to initialise GLAD");
@@ -145,10 +188,13 @@ int main(const int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    int framebufferWidth = 0;
-    int framebufferHeight = 0;
-    glfwGetFramebufferSize(window, &framebufferWidth, &framebufferHeight);
-    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    glfwGetFramebufferSize(
+        window,
+        &state.framebufferWidth,
+        &state.framebufferHeight
+    );
+    glViewport(0, 0, state.framebufferWidth, state.framebufferHeight);
+    glEnable(GL_DEPTH_TEST);
 
     int result = EXIT_SUCCESS;
     try {
@@ -158,38 +204,19 @@ int main(const int argc, char* argv[])
         const std::filesystem::path assetDirectory = executableDirectory / "assets";
 
         citybuilder::Shader shader{
-            assetDirectory / "shaders" / "textured.vert",
-            assetDirectory / "shaders" / "textured.frag"
+            assetDirectory / "shaders" / "ground.vert",
+            assetDirectory / "shaders" / "ground.frag"
         };
-        shader.use();
-        shader.setInt("texture1", 0);
-        shader.setInt("texture2", 1);
-
-        stbi_set_flip_vertically_on_load(true);
-        const unsigned int texture1 = loadTexture(
-            assetDirectory / "textures" / "container.jpg"
-        );
-
-        unsigned int texture2 = 0;
-        try {
-            texture2 = loadTexture(
-                assetDirectory / "textures" / "awesomeface.png"
-            );
-        } catch (...) {
-            glDeleteTextures(1, &texture1);
-            throw;
-        }
 
         const float vertices[] = {
-            // position             // texture coordinate
-             0.5F,  0.5F, 0.0F,    1.0F, 1.0F,
-             0.5F, -0.5F, 0.0F,    1.0F, 0.0F,
-            -0.5F, -0.5F, 0.0F,    0.0F, 0.0F,
-            -0.5F,  0.5F, 0.0F,    0.0F, 1.0F,
+            -1000.0F, 0.0F, -1000.0F,
+             1000.0F, 0.0F, -1000.0F,
+             1000.0F, 0.0F,  1000.0F,
+            -1000.0F, 0.0F,  1000.0F,
         };
         const unsigned int indices[] = {
-            0, 1, 3,
-            1, 2, 3,
+            0, 2, 1,
+            0, 3, 2,
         };
 
         unsigned int vertexArray = 0;
@@ -215,66 +242,47 @@ int main(const int argc, char* argv[])
             3,
             GL_FLOAT,
             GL_FALSE,
-            5 * sizeof(float),
+            3 * sizeof(float),
             nullptr
         );
         glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(
-            1,
-            2,
-            GL_FLOAT,
-            GL_FALSE,
-            5 * sizeof(float),
-            reinterpret_cast<void*>(3 * sizeof(float))
-        );
-        glEnableVertexAttribArray(1);
+        double previousFrameTime = glfwGetTime();
 
         while (glfwWindowShouldClose(window) == GLFW_FALSE) {
-            processInput(window);
+            const double currentFrameTime = glfwGetTime();
+            const float deltaTime = std::min(
+                static_cast<float>(currentFrameTime - previousFrameTime),
+                0.1F
+            );
+            previousFrameTime = currentFrameTime;
+            processInput(window, state, deltaTime);
 
-            glClearColor(0.2F, 0.3F, 0.3F, 1.0F);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClearColor(0.075F, 0.095F, 0.105F, 1.0F);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture1);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, texture2);
+            const int safeFramebufferHeight = std::max(
+                state.framebufferHeight,
+                1
+            );
+            const float aspectRatio = static_cast<float>(state.framebufferWidth) /
+                static_cast<float>(safeFramebufferHeight);
 
             shader.use();
+            shader.setMat4("model", glm::mat4{1.0F});
+            shader.setMat4("view", state.camera.viewMatrix());
+            shader.setMat4(
+                "projection",
+                state.camera.projectionMatrix(aspectRatio)
+            );
+
             glBindVertexArray(vertexArray);
-
-            const float elapsedTime = static_cast<float>(glfwGetTime());
-
-            glm::mat4 transform{1.0F};
-            transform = glm::translate(
-                transform,
-                glm::vec3{0.5F, -0.5F, 0.0F}
-            );
-            transform = glm::rotate(
-                transform,
-                elapsedTime,
-                glm::vec3{0.0F, 0.0F, 1.0F}
-            );
-            shader.setMat4("transform", transform);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-
-            transform = glm::mat4{1.0F};
-            transform = glm::translate(
-                transform,
-                glm::vec3{-0.5F, 0.5F, 0.0F}
-            );
-            const float scale = 0.5F + 0.25F * std::sin(elapsedTime * 2.0F);
-            transform = glm::scale(transform, glm::vec3{scale, scale, 1.0F});
-            shader.setMat4("transform", transform);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
 
-        glDeleteTextures(1, &texture1);
-        glDeleteTextures(1, &texture2);
         glDeleteVertexArrays(1, &vertexArray);
         glDeleteBuffers(1, &vertexBuffer);
         glDeleteBuffers(1, &elementBuffer);
